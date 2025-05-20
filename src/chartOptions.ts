@@ -44,7 +44,11 @@ const zoomOptions: ZoomPluginOptions = {
     }
 };
 
-export function createOptions(params: { title_function: (raw: any) => string, tooltip_function: (raw: any) => string; }): ChartOptions<'line'> {
+export function createOptions(params: {
+    title_function: (raw: any) => string,
+    tooltip_function: (raw: any) => string;
+    datalabel_function: (raw: any) => string;
+}): ChartOptions<'line'> {
     return {
         responsive: true,
         maintainAspectRatio: false,
@@ -57,11 +61,14 @@ export function createOptions(params: { title_function: (raw: any) => string, to
         plugins: {
             zoom: zoomOptions,
             datalabels: {
-                color: '#36A2EB',
-                align: 'left',
-                anchor: 'center',
+                color: '#4BC0C0', // Changed color for new label, can be adjusted
+                align: 'top',
+                anchor: 'end',
                 display: true,
-                formatter: (obj, _) => obj.label, //TODO: type
+                formatter: (obj, _) => params.datalabel_function(obj),
+                font: {
+                    size: 9,
+                }
             },
             colors: {
                 forceOverride: true,

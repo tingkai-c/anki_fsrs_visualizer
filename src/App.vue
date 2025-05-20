@@ -49,6 +49,10 @@
             <input id="enable_short_term" type="checkbox" v-model="fsrs_params.enable_short_term" />
             <label for="enable_short_term">Short-term</label>
         </div>
+        <div>
+            <label for="n-days-recall">Recall Projection (days):</label>
+            <input id="n-days-recall" type="number" v-model.number="nDaysForRecall" min="1" style="width: 60px; margin-left: 5px;" />
+        </div>
     </div>
     <div class="slider-container">
         <Slider v-for="(slider, index) in additionalSliders" :info="slider" v-model="fsrs_params.m[index]"
@@ -144,6 +148,7 @@ function cardDataFormat(card: Card, mode: keyof Card) {
 const mode = ref<keyof Card>("interval");
 const animation = ref(true);
 const useLogScale = ref(false);
+const nDaysForRecall = ref(180); // Default to 180 days
 const names = ['', 'Again', 'Hard', 'Good', 'Easy'];
 
 const short_term_desc = 'When disabled, this allow user to skip the short-term scheduler and directly switch to the long-term scheduler.';
@@ -162,7 +167,14 @@ const options = ref(createOptions({
     },
     tooltip_function: (item: MyData) => {
         const review_text = item.review.join('');
-        return `${review_text}: ${names[item.x]}, Stability: ${item.card.stability.toFixed(2)}, Difficulty: ${item.card.displayDifficulty.toFixed(0)}%`;
+        const recallProbForNDaysText = (item.card.recallProbabilityForNDays * 100).toFixed(1);
+        return `${review_text}: ${names[item.x]}, Stability: ${item.card.stability.toFixed(2)}, Difficulty: ${item.card.displayDifficulty.toFixed(0)}%, Level (${nDaysForRecall.value}d): ${recallProbForNDaysText}%`;
+    },
+    datalabel_function: (item: MyData) => {
+        if (item && item.card && typeof item.card.recallProbabilityForNDays === 'number') {
+            return `${(item.card.recallProbabilityForNDays * 100).toFixed(0)}%`;
+        }
+        return '';
     },
 }));
 
@@ -226,7 +238,7 @@ function createLabels() {
 }
 
 function createData(): ChartData<'line', MyData[]> {
-    const calc = new TsFsrsCalculator(fsrs_params.value.w, fsrs_params.value.m, fsrs_params.value.enable_short_term);
+    const calc = new TsFsrsCalculator(fsrs_params.value.w, fsrs_params.value.m, fsrs_params.value.enable_short_term, nDaysForRecall.value);
 
     // could not use dataset's yAxisKey here because chart component is not watching it and doesn't update automatically
     return {
